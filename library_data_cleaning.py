@@ -1,7 +1,7 @@
 """
 Library System Data Cleaning & Validation Script
 Phase 1: Clean and validate CSV data files
-Phase 2: Save cleaned data to database using SQLAlchemy
+Phase 2: Save cleaned data to database using SQLAlchemy (not implemented yet)
 """
 
 import pandas as pd
@@ -9,7 +9,6 @@ import numpy as np
 from datetime import datetime, timedelta
 
 def load_data():
-    """Load the CSV files"""
     
     books_df = pd.read_csv('03_Library Systembook.csv')
     customers_df = pd.read_csv('03_Library SystemCustomers.csv')
