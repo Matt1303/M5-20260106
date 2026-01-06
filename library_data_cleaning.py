@@ -162,7 +162,6 @@ def save_cleaned_data(books_df, customers_df):
     # Save to CSV
     books_output.to_csv('03_Library Systembook_cleaned.csv', index=False)
     customers_output.to_csv('03_Library SystemCustomers_cleaned.csv', index=False)
-    
 
 def main():
     
