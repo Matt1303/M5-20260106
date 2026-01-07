@@ -1,17 +1,50 @@
 """
 Library System Data Cleaning & Validation Script
-Phase 1: Clean and validate CSV data files
+Phase 1: Clean and validate CSV data files - using arparse for input/output paths
 Phase 2: Save cleaned data to database using SQLAlchemy (not implemented yet)
 """
 
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import argparse
+import argparse
 
-def load_data():
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Library System Data Cleaning & Validation Script'
+    )
     
-    books_df = pd.read_csv('03_Library Systembook.csv')
-    customers_df = pd.read_csv('03_Library SystemCustomers.csv')
+    parser.add_argument(
+        '--books-input',
+        default='03_Library Systembook.csv',
+        help='Path to books CSV file (default: 03_Library Systembook.csv)'
+    )
+    
+    parser.add_argument(
+        '--customers-input',
+        default='03_Library SystemCustomers.csv',
+        help='Path to customers CSV file (default: 03_Library SystemCustomers.csv)'
+    )
+    
+    parser.add_argument(
+        '--books-output',
+        default='03_Library Systembook_cleaned.csv',
+        help='Path for cleaned books output (default: 03_Library Systembook_cleaned.csv)'
+    )
+    
+    parser.add_argument(
+        '--customers-output',
+        default='03_Library SystemCustomers_cleaned.csv',
+        help='Path for cleaned customers output (default: 03_Library SystemCustomers_cleaned.csv)'
+    )
+    
+    return parser.parse_args()
+
+def load_data(books_path, customers_path):
+    
+    books_df = pd.read_csv(books_path)
+    customers_df = pd.read_csv(customers_path)
     
     return books_df, customers_df
 
@@ -147,9 +180,9 @@ def add_missing_customers(customers_df, books_df):
     
     return customers_df
 
-def save_cleaned_data(books_df, customers_df):
+def save_cleaned_data(books_df, customers_df, books_output_path, customers_output_path):
     
-    # Select columns for output
+    # select columns for output
     books_output = books_df[[
         'Id', 'Books', 'Book checkout', 'Book Returned', 
         'Days allowed to borrow', 'Customer ID', 
@@ -158,13 +191,17 @@ def save_cleaned_data(books_df, customers_df):
     
     customers_output = customers_df[['Customer ID', 'Customer Name']].copy()
     
-    # Save to CSV
-    books_output.to_csv('03_Library Systembook_cleaned.csv', index=False)
-    customers_output.to_csv('03_Library SystemCustomers_cleaned.csv', index=False)
+    books_output.to_csv(books_output_path, index=False)
+    customers_output.to_csv(customers_output_path, index=False)
+    
+    print(f"\nCleaned data saved to:")
+    print(f"  Books: {books_output_path}")
+    print(f"  Customers: {customers_output_path}")
 
 def main():
+    args = parse_arguments()
     
-    books_df, customers_df = load_data()
+    books_df, customers_df = load_data(args.books_input, args.customers_input)
     
     issues = analyse_data_quality(books_df, customers_df)
     
@@ -173,7 +210,7 @@ def main():
 
     customers_df = add_missing_customers(customers_df, books_df)
     
-    save_cleaned_data(books_df, customers_df)
+    save_cleaned_data(books_df, customers_df, args.books_output, args.customers_output)
 
 if __name__ == "__main__":
     main()
