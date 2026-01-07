@@ -8,7 +8,9 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import argparse
-import argparse
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from database_models import Base, Customer, Book, Loan
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -37,6 +39,25 @@ def parse_arguments():
         '--customers-output',
         default='03_Library SystemCustomers_cleaned.csv',
         help='Path for cleaned customers output (default: 03_Library SystemCustomers_cleaned.csv)'
+    )
+    
+    parser.add_argument(
+        '--db-path',
+        default='library_system.db',
+        help='Path for SQLite database (default: library_system.db)'
+    )
+    
+    parser.add_argument(
+        '--save-to-db',
+        action='store_true',
+        help='Save cleaned data to SQLite database'
+    )
+    
+    parser.add_argument(
+        '--loan-period',
+        type=int,
+        default=14,
+        help='Number of days allowed for borrowing (default: 14)'
     )
     
     return parser.parse_args()
@@ -91,7 +112,7 @@ def analyse_data_quality(books_df, customers_df):
     print(issues)
     return issues
 
-def clean_books_data(books_df):
+def clean_books_data(books_df, loan_period=14):
 
     # remove completely empty rows
     original_count = len(books_df)
@@ -137,7 +158,7 @@ def clean_books_data(books_df):
     
     books_df['days_borrowed'] = (books_df['return_date'] - books_df['checkout_date']).dt.days
     
-    books_df['days_allowed'] = 14
+    books_df['days_allowed'] = loan_period
     books_df['is_overdue'] = books_df['days_borrowed'] > books_df['days_allowed']
     books_df['days_overdue'] = books_df.apply(
         lambda row: max(0, row['days_borrowed'] - row['days_allowed']) if pd.notna(row['days_borrowed']) else 0,
@@ -198,19 +219,90 @@ def save_cleaned_data(books_df, customers_df, books_output_path, customers_outpu
     print(f"  Books: {books_output_path}")
     print(f"  Customers: {customers_output_path}")
 
+def save_to_database(books_df, customers_df, db_path='library_system.db'):
+    """saves cleaned data to SQLite database using SQLAlchemy"""
+
+    engine = create_engine(f'sqlite:///{db_path}', echo=False)
+    Base.metadata.create_all(engine)
+    
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    
+    try:
+        # delete existing data
+        session.query(Loan).delete()
+        session.query(Book).delete()
+        session.query(Customer).delete()
+        session.commit()
+        
+        # Insert customers
+        for _, row in customers_df.iterrows():
+            customer = Customer(
+                customer_id=int(row['Customer ID']),
+                customer_name=row['Customer Name']
+            )
+            session.add(customer)
+        session.commit()
+        
+        # Insert unique books
+        unique_books = books_df['Books'].unique()
+        book_map = {}
+        
+        for idx, book_title in enumerate(unique_books, start=1):
+            book = Book(
+                book_id=idx,
+                title=book_title
+            )
+            session.add(book)
+            book_map[book_title] = idx
+        session.commit()
+        
+        # Insert loans
+        for _, row in books_df.iterrows():
+            checkout_date = pd.to_datetime(row['Book checkout'], format='%d/%m/%Y', errors='coerce')
+            return_date = pd.to_datetime(row['Book Returned'], format='%d/%m/%Y', errors='coerce')
+            
+            loan = Loan(
+                loan_id=int(row['Id']),
+                book_id=book_map[row['Books']],
+                customer_id=int(row['Customer ID']),
+                checkout_date=checkout_date.date() if pd.notna(checkout_date) else None,
+                return_date=return_date.date() if pd.notna(return_date) else None,
+                days_allowed=int(row['days_allowed'])
+            )
+            session.add(loan)
+        session.commit()
+        
+        print(f"\nDatabase saved: {db_path}")
+        
+    except Exception as e:
+        session.rollback()
+        print(f"\nDatabase error: {e}")
+        raise
+    finally:
+        session.close()
+
 def main():
     args = parse_arguments()
+    
+    print(f"Loading data from:")
+    print(f"  Books: {args.books_input}")
+    print(f"  Customers: {args.customers_input}")
+    print()
     
     books_df, customers_df = load_data(args.books_input, args.customers_input)
     
     issues = analyse_data_quality(books_df, customers_df)
     
-    books_df = clean_books_data(books_df)
+    books_df = clean_books_data(books_df, args.loan_period)
     customers_df = clean_customers_data(customers_df)
 
     customers_df = add_missing_customers(customers_df, books_df)
     
     save_cleaned_data(books_df, customers_df, args.books_output, args.customers_output)
+    
+    if args.save_to_db:
+        save_to_database(books_df, customers_df, args.db_path)
 
 if __name__ == "__main__":
     main()
