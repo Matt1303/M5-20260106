@@ -1,5 +1,5 @@
 ### Summary
-This project cleans and validates library checkout data from CSV files, then stores the cleaned data in both CSV format and a SQLite database. The system handles data quality issues, fixes invalid dates, calculates overdue status, and maintains referential integrity between customers and book loans.
+This project cleans and validates library book loan data from CSV files, then stores the cleaned data in both CSV format and a SQLite database using SQLAlchemy. The project is containerised with Docker and Docker Compose for reproducible, isolated execution with persistent volume storage.
 
 ---
 
@@ -143,5 +143,67 @@ python library_data_cleaning.py \
   --db-path "library.db" \
   --loan-period 14 \
   --save-to-db
+```
+
+---
+
+## Docker & Docker Compose
+
+### Overview
+The project includes a `Dockerfile` and `docker-compose.yml` to run data cleaning, database operations, and tests in a containerised environment. This ensures consistent Python versions, dependencies, and isolated execution.
+
+### Build the Image
+
+```bash
+docker build -t library-system:latest .
+```
+
+### Run with Docker Compose (Recommended)
+
+**Start the service** (builds image if needed):
+```bash
+docker compose up --build -d
+```
+
+**Run the cleaning script** (outputs persist on host via mount):
+```bash
+docker compose run --rm app python library_data_cleaning.py --books-output cleaned_books.csv --customers-output cleaned_customers.csv --save-to-db
+```
+Note: PowerShell does not support `\` for line continuation—use a single line or backticks. Bash shells use `\` for line continuation.
+
+**Run tests inside the container**:
+```bash
+docker compose run --rm app pytest -v
+```
+
+**Stop services**:
+```bash
+docker compose down
+```
+
+### Volume Mounts Explained
+
+The `docker-compose.yml` defines two mounts:
+
+1. **Bind Mount** (`.:/app`) — syncs your host project directory with `/app` inside the container
+   - Edits on your PC are immediately visible in the container
+   - Outputs written to `/app` appear on your host filesystem
+
+2. **Named Volume** (`library-data:/app/library_data`) — Docker-managed storage
+   - Persists data beyond container lifecycle
+   - Useful for SQLite databases and long-term outputs
+
+### Run with Docker (Manual)
+
+Alternatively can run  `docker run` instead of compose:
+
+```bash
+# Bind-mount project directory (Linux/macOS)
+docker run --rm -v "$(pwd)":/app library-system:latest \
+  python library_data_cleaning.py --books-output cleaned_books.csv --save-to-db
+
+# Bind-mount project directory (Windows PowerShell)
+docker run --rm -v ${PWD}:/app library-system:latest \
+  python library_data_cleaning.py --books-output cleaned_books.csv --save-to-db
 ```
 
