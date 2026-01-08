@@ -5,7 +5,7 @@ services:
     build: .
     image: library-system:compose
     working_dir: /app
-    # Bind-mount project folder for development so host edits are visible inside the container
+    # bind-mount project folder for development so host edits are visible inside the container
     volumes:
       - .:/app
       - library-data:/app/library_data

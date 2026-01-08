@@ -126,7 +126,7 @@ Run a one-off command (for example to run the cleaning script and keep output vi
 docker compose run --rm app python library_data_cleaning.py --books-output cleaned_books.csv --customers-output cleaned_customers.csv
 ```
 
-Bring down services (volumes remain unless you remove them):
+Bring down services (volumes remain unless removed):
 
 ```bash
 docker compose down
