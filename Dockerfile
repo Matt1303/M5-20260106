@@ -5,6 +5,7 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+
 WORKDIR /app
 
 # Install minimal system packages needed by some Python wheels/builds

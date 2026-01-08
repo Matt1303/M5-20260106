@@ -122,6 +122,7 @@ docker compose up --build -d
 
 Run a one-off command (for example to run the cleaning script and keep output visible):
 
+
 ```bash
 docker compose run --rm app python library_data_cleaning.py --books-output cleaned_books.csv --customers-output cleaned_customers.csv
 ```
