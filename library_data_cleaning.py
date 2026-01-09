@@ -154,7 +154,7 @@ def clean_books_data(books_df, loan_period=14):
     
     books_df['Book checkout'] = books_df['Book checkout'].apply(clean_date)
     books_df['Book Returned'] = books_df['Book Returned'].apply(clean_date)
-    logger.debug("Cleaned date format (removed extra quotes)")
+    logger.debug("Cleaned date format (removed extra quotes)") 
     
     def fix_invalid_date(date_str, row_id):
         if pd.isna(date_str) or date_str is None:
@@ -357,7 +357,6 @@ def main():
     logger.info(f"Data loaded successfully: {len(books_df)} books records, {len(customers_df)} customers records")
     
     issues = analyse_data_quality(books_df, customers_df)
-     
      
     books_df = clean_books_data(books_df, args.loan_period)
     customers_df = clean_customers_data(customers_df)
