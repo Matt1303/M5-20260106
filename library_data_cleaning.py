@@ -358,6 +358,7 @@ def main():
     
     issues = analyse_data_quality(books_df, customers_df)
      
+     
     books_df = clean_books_data(books_df, args.loan_period)
     customers_df = clean_customers_data(customers_df)
 
