@@ -357,7 +357,7 @@ def main():
     logger.info(f"Data loaded successfully: {len(books_df)} books records, {len(customers_df)} customers records")
     
     issues = analyse_data_quality(books_df, customers_df)
-    
+     
     books_df = clean_books_data(books_df, args.loan_period)
     customers_df = clean_customers_data(customers_df)
 

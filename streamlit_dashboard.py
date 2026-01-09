@@ -168,6 +168,7 @@ else:
     st.markdown("---")
     st.header("🔍 Data Cleaning Process Log")
     
+    
     # Create tabs for different log views
     tab1, tab2, tab3 = st.tabs(["Full Log", "Errors Only", "Warnings Only"])
     
